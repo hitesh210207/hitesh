@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recursive Text Splitter Dashboard</title>
+    <!-- Premium Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(22, 28, 45, 0.4);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --primary-glow: rgba(139, 92, 246, 0.15);
+            --primary: #8b5cf6;
+            --primary-hover: #7c3aed;
+            --secondary: #06b6d4;
+            --secondary-glow: rgba(6, 182, 212, 0.15);
+            --accent: #ec4899;
+            --error: #ef4444;
+            --error-bg: rgba(239, 68, 68, 0.1);
+            --success: #10b981;
+            --success-bg: rgba(16, 185, 129, 0.1);
+            --font-outfit: 'Outfit', sans-serif;
+            --font-inter: 'Inter', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-inter);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Abstract glowing background circles */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, rgba(0,0,0,0) 70%);
+            top: -100px;
+            left: -100px;
+            z-index: -1;
+            filter: blur(40px);
+        }
+
+        body::after {
+            content: '';
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.2) 0%, rgba(0,0,0,0) 70%);
+            bottom: -150px;
+            right: -150px;
+            z-index: -1;
+            filter: blur(50px);
+        }
+
+        header {
+            padding: 2.5rem 1.5rem 1.5rem;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px var(--primary-glow);
+        }
+
+        .logo-icon svg {
+            width: 22px;
+            height: 22px;
+            fill: white;
+        }
+
+        .logo-text {
+            font-family: var(--font-outfit);
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 30%, #a855f7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .docs-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.2rem;
+            border-radius: 9999px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.875rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .docs-link:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
+            transform: translateY(-2px);
+        }
+
+        main {
+            flex: 1;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 1.5rem 4rem;
+            display: grid;
+            grid-template-columns: 1.2fr 1.8fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 968px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 2rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: border-color 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .section-title {
+            font-family: var(--font-outfit);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Tabs Container */
+        .tabs-header {
+            display: flex;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 0.25rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--card-border);
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.75rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Form styling */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        textarea {
+            width: 100%;
+            height: 180px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1rem;
+            color: var(--text-primary);
+            font-family: var(--font-inter);
+            font-size: 0.95rem;
+            resize: vertical;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+        }
+
+        .params-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .input-number {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-number:focus {
+            border-color: var(--primary);
+        }
+
+        /* File Upload Area */
+        .file-dropzone {
+            border: 2px dashed var(--card-border);
+            border-radius: 16px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            position: relative;
+        }
+
+        .file-dropzone:hover, .file-dropzone.dragover {
+            border-color: var(--secondary);
+            background: rgba(6, 182, 212, 0.05);
+        }
+
+        .file-dropzone svg {
+            width: 48px;
+            height: 48px;
+            stroke: var(--text-secondary);
+            transition: stroke 0.3s ease;
+        }
+
+        .file-dropzone:hover svg {
+            stroke: var(--secondary);
+        }
+
+        .file-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-info {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: var(--secondary);
+            word-break: break-all;
+            margin-top: 0.5rem;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+            border: none;
+            color: #fff;
+            padding: 1rem;
+            border-radius: 12px;
+            font-family: var(--font-outfit);
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px var(--primary-glow);
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(139, 92, 246, 0.45);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .btn-submit:disabled {
+            background: var(--text-secondary);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Results container styling */
+        .results-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .placeholder-results {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .placeholder-results svg {
+            width: 64px;
+            height: 64px;
+            stroke: var(--card-border);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Stat cards layout */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: var(--font-outfit);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value.accent-color {
+            color: var(--secondary);
+        }
+
+        .stat-value.primary-color {
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Chunks list */
+        .chunks-list-wrapper {
+            flex: 1;
+            max-height: 480px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        /* Custom scrollbar */
+        .chunks-list-wrapper::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chunks-list-wrapper::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chunks-list-wrapper::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .chunks-list-wrapper::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .chunk-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .chunk-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(139, 92, 246, 0.3);
+        }
+
+        .chunk-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .chunk-badge {
+            background: var(--primary-glow);
+            color: var(--primary);
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            font-family: var(--font-outfit);
+        }
+
+        .chunk-text {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .btn-copy {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        .btn-copy:hover {
+            color: var(--secondary);
+        }
+
+        /* Alerts and feedback */
+        .alert {
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .alert-error {
+            background: var(--error-bg);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+        }
+
+        .alert svg {
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading .spinner {
+            display: inline-block;
+        }
+
+        .loading .btn-text {
+            display: none;
+        }
+
+        footer {
+            padding: 2rem 1.5rem;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-top: auto;
+            border-top: 1px solid var(--card-border);
+        }
+
+        footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-container">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke="white" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" y1="9" x2="20" y2="9"></line>
+                    <line x1="4" y1="15" x2="20" y2="15"></line>
+                    <line x1="10" y1="3" x2="8" y2="21"></line>
+                    <line x1="16" y1="3" x2="14" y2="21"></line>
+                </svg>
+            </div>
+            <span class="logo-text">Chunks.ai</span>
+        </div>
+        <a href="/docs" target="_blank" class="docs-link" id="api-docs-link">
+            <span>API Reference</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+        </a>
+    </header>
+
+    <main>
+        <!-- Form Section -->
+        <section class="glass-card">
+            <h2 class="section-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.25rem;">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                Document Splitter
+            </h2>
+
+            <div class="tabs-header">
+                <button class="tab-btn active" id="tab-text-btn" onclick="switchTab('text')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Raw Text
+                </button>
+                <button class="tab-btn" id="tab-file-btn" onclick="switchTab('file')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    PDF Upload
+                </button>
+            </div>
+
+            <!-- Validation/Error Box -->
+            <div id="alert-container"></div>
+
+            <form id="splitter-form" onsubmit="handleSplit(event)">
+                <!-- Parameters (common to both tabs) -->
+                <div class="params-grid form-group">
+                    <div>
+                        <label for="chunk-size">Chunk Size</label>
+                        <input type="number" id="chunk-size" class="input-number" value="50" min="1" required>
+                    </div>
+                    <div>
+                        <label for="chunk-overlap">Chunk Overlap</label>
+                        <input type="number" id="chunk-overlap" class="input-number" value="10" min="0" required>
+                    </div>
+                </div>
+
+                <!-- Tab 1 Content: Direct Text -->
+                <div id="tab-text-content" class="tab-content active">
+                    <div class="form-group">
+                        <label for="raw-text">Input Text</label>
+                        <textarea id="raw-text" placeholder="Paste your large text here..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Tab 2 Content: PDF Upload -->
+                <div id="tab-file-content" class="tab-content">
+                    <div class="form-group">
+                        <label>Upload PDF Document</label>
+                        <div class="file-dropzone" id="dropzone">
+                            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <span class="file-info">Drag and drop your PDF here, or <span style="color: var(--secondary); text-decoration: underline;">browse</span></span>
+                            <span class="file-info" style="font-size: 0.75rem;">Max file size: 10MB</span>
+                            <input type="file" id="pdf-file" class="file-input" accept="application/pdf" onchange="handleFileSelect(event)">
+                            <div class="file-name" id="selected-file-name"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-submit" class="btn-submit">
+                    <div class="spinner"></div>
+                    <span class="btn-text">Split Document</span>
+                </button>
+            </form>
+        </section>
+
+        <!-- Results Section -->
+        <section class="glass-card">
+            <div class="results-container">
+                <h2 class="section-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--secondary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.25rem;">
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        <circle cx="11" cy="11" r="8"></circle>
+                    </svg>
+                    Split Results
+                </h2>
+
+                <div id="results-placeholder" class="placeholder-results">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    <p style="font-weight: 500; margin-bottom: 0.25rem;">No Chunks Generated Yet</p>
+                    <p style="font-size: 0.85rem; max-width: 250px;">Enter some text or upload a PDF file, specify split options, and hit Split Document.</p>
+                </div>
+
+                <div id="results-content" style="display: none; height: 100%;">
+                    <!-- Stats Card -->
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div id="stat-total-chunks" class="stat-value primary-color">0</div>
+                            <div class="stat-label">Total Chunks</div>
+                        </div>
+                        <div class="stat-card">
+                            <div id="stat-avg-size" class="stat-value accent-color">0</div>
+                            <div class="stat-label">Avg Length</div>
+                        </div>
+                        <div class="stat-card">
+                            <div id="stat-total-chars" class="stat-value">0</div>
+                            <div class="stat-label">Total Chars</div>
+                        </div>
+                    </div>
+
+                    <!-- Chunks List -->
+                    <div class="chunks-list-wrapper" id="chunks-list">
+                        <!-- Dynamically filled chunk cards -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Chunks.ai. Built with FastAPI and LangChain Text Splitters.</p>
+    </footer>
+
+    <script>
+        let currentTab = 'text';
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            if (tab === 'text') {
+                document.getElementById('tab-text-btn').classList.add('active');
+                document.getElementById('tab-text-content').classList.add('active');
+            } else {
+                document.getElementById('tab-file-btn').classList.add('active');
+                document.getElementById('tab-file-content').classList.add('active');
+            }
+            // Clear alert
+            document.getElementById('alert-container').innerHTML = '';
+        }
+
+        // File drag-and-drop feedback
+        const dropzone = document.getElementById('dropzone');
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropzone.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('dragover');
+            }, false);
+        });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            updateFileInfo(file);
+        }
+
+        dropzone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const file = dt.files[0];
+            if (file && file.type === 'application/pdf') {
+                document.getElementById('pdf-file').files = dt.files;
+                updateFileInfo(file);
+            } else {
+                showAlert('Please drop a valid PDF document.');
+            }
+        });
+
+        function updateFileInfo(file) {
+            const fileNameDiv = document.getElementById('selected-file-name');
+            if (file) {
+                fileNameDiv.textContent = `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            } else {
+                fileNameDiv.textContent = '';
+            }
+        }
+
+        function showAlert(message) {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = `
+                <div class="alert alert-error">
+                    <svg viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                    <div>${message}</div>
+                </div>
+            `;
+        }
+
+        async function handleSplit(event) {
+            event.preventDefault();
+            
+            const alertContainer = document.getElementById('alert-container');
+            alertContainer.innerHTML = ''; // clear error
+            
+            const chunkSize = parseInt(document.getElementById('chunk-size').value);
+            const chunkOverlap = parseInt(document.getElementById('chunk-overlap').value);
+
+            // Client-side validations
+            if (isNaN(chunkSize) || chunkSize <= 0) {
+                showAlert('Chunk Size must be a positive integer.');
+                return;
+            }
+            if (isNaN(chunkOverlap) || chunkOverlap < 0) {
+                showAlert('Chunk Overlap must be a non-negative integer.');
+                return;
+            }
+            if (chunkOverlap >= chunkSize) {
+                showAlert('Chunk Overlap must be strictly less than Chunk Size.');
+                return;
+            }
+
+            const submitBtn = document.getElementById('btn-submit');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('loading');
+
+            try {
+                let response;
+                if (currentTab === 'text') {
+                    const text = document.getElementById('raw-text').value.trim();
+                    if (!text) {
+                        showAlert('Please enter some text to split.');
+                        submitBtn.disabled = false;
+                        submitBtn.classList.remove('loading');
+                        return;
+                    }
+                    response = await fetch('/split', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            text: text,
+                            chunk_size: chunkSize,
+                            chunk_overlap: chunkOverlap
+                        })
+                    });
+                } else {
+                    const fileInput = document.getElementById('pdf-file');
+                    if (fileInput.files.length === 0) {
+                        showAlert('Please select or upload a PDF file.');
+                        submitBtn.disabled = false;
+                        submitBtn.classList.remove('loading');
+                        return;
+                    }
+                    const formData = new FormData();
+                    formData.append('file', fileInput.files[0]);
+                    formData.append('chunk_size', chunkSize);
+                    formData.append('chunk_overlap', chunkOverlap);
+
+                    response = await fetch('/split-pdf', {
+                        method: 'POST',
+                        body: formData
+                    });
+                }
+
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    if (result.detail) {
+                        if (Array.isArray(result.detail)) {
+                            showAlert(result.detail.map(d => d.msg).join('<br>'));
+                        } else {
+                            showAlert(result.detail);
+                        }
+                    } else {
+                        showAlert('An error occurred during request processing.');
+                    }
+                    return;
+                }
+
+                // Render Results
+                renderResults(result);
+
+            } catch (err) {
+                showAlert('Unable to connect to the server. Please verify it is running.');
+                console.error(err);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('loading');
+            }
+        }
+
+        function renderResults(data) {
+            document.getElementById('results-placeholder').style.display = 'none';
+            const content = document.getElementById('results-content');
+            content.style.display = 'flex';
+
+            document.getElementById('stat-total-chunks').textContent = data.total_chunks;
+            
+            const chunks = data.chunks;
+            const totalChars = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+            const avgSize = chunks.length > 0 ? Math.round(totalChars / chunks.length) : 0;
+            
+            document.getElementById('stat-avg-size').textContent = avgSize;
+            document.getElementById('stat-total-chars').textContent = totalChars;
+
+            const listContainer = document.getElementById('chunks-list');
+            listContainer.innerHTML = '';
+
+            chunks.forEach((chunk, index) => {
+                const card = document.createElement('div');
+                card.className = 'chunk-card';
+                card.innerHTML = `
+                    <div class="chunk-header">
+                        <span class="chunk-badge">Chunk #${index + 1}</span>
+                        <span>${chunk.length} chars</span>
+                        <button class="btn-copy" onclick="copyToClipboard(this, ${index})">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            <span>Copy</span>
+                        </button>
+                    </div>
+                    <div class="chunk-text" id="chunk-text-${index}">${escapeHtml(chunk)}</div>
+                `;
+                listContainer.appendChild(card);
+            });
+        }
+
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function copyToClipboard(button, index) {
+            const text = document.getElementById(`chunk-text-${index}`).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                const label = button.querySelector('span');
+                const origText = label.textContent;
+                label.textContent = 'Copied!';
+                button.style.color = 'var(--success)';
+                setTimeout(() => {
+                    label.textContent = origText;
+                    button.style.color = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+    </script>
+</body>
+</html>
